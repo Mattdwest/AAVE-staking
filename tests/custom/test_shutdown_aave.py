@@ -49,12 +49,12 @@ def test_operation(
     chain.sleep(3600 * 24 * 7)
     chain.mine(1)
 
-    # first harvest
+    # claim profit
     strategy.harvest({"from": gov})
     chain.mine(1)
 
     # 6 hours for pricepershare to go up
-    chain.sleep(2400 * 6)
+    chain.sleep(3600 * 6)
     chain.mine(1)
 
     strategy.setEmergencyExit({"from": gov})

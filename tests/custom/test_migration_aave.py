@@ -55,7 +55,7 @@ def test_operation(
     chain.mine(1)
 
     # 6 hours for pricepershare to go up
-    chain.sleep(2400 * 6)
+    chain.sleep(3600 * 6)
     chain.mine(1)
 
     newstrategy.setStrategist(strategist)

@@ -2,6 +2,10 @@ import pytest
 from brownie import config, Contract
 
 
+@pytest.fixture(scope="function", autouse=True)
+def shared_setup(fn_isolation):
+    pass
+
 @pytest.fixture
 def gov(accounts):
     yield accounts[0]
@@ -84,13 +88,10 @@ def strategy(
     gov,
     stake,
 ):
-    strategy = guardian.deploy(StrategyAaveStaking, vault)
-    strategy.initialize(stake)
+    strategy = guardian.deploy(StrategyAaveStaking, vault, stake)
     strategy.setKeeper(keeper)
     vault.addStrategy(strategy, 10_000, 0, 2 ** 256 - 1, 1_000, {"from": gov})
     yield strategy
-
-
 
 @pytest.fixture
 def newstrategy(
@@ -102,7 +103,6 @@ def newstrategy(
     gov,
     stake,
 ):
-    newstrategy = guardian.deploy(StrategyAaveStaking, vault)
-    newstrategy.initialize(stake)
+    newstrategy = guardian.deploy(StrategyAaveStaking, vault, stake)
     newstrategy.setKeeper(keeper)
     yield newstrategy

@@ -16,4 +16,6 @@ interface IAaveStaking {
     function COOLDOWN_SECONDS() external view returns (uint256);
 
     function stakersCooldowns(address) external view returns (uint256);
+
+    function UNSTAKE_WINDOW() external view returns (uint256);
 }

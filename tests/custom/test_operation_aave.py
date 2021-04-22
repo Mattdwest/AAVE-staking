@@ -54,14 +54,14 @@ def test_operation(
 
     # 6 hours for pricepershare to go up, there should be profit
     strategy.harvest({"from": gov})
-    chain.sleep(2400 * 6)
+    chain.sleep(3600 * 6)
     chain.mine(1)
     pps_after_second_harvest = vault.pricePerShare()
     assert pps_after_second_harvest > pps_after_first_harvest
 
     # 6 hours for pricepershare to go up
     strategy.harvest({"from": gov})
-    chain.sleep(2400 * 6)
+    chain.sleep(3600 * 6)
     chain.mine(1)
 
     strategy.startCooldown({"from": gov})

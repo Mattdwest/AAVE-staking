@@ -42,15 +42,26 @@ def test_revoke_strategy_from_vault(
     # First harvest
     strategy.harvest({"from": gov})
 
+    # confirm deposit success
+    # sleep to generate profit
     assert stake.balanceOf(strategy) > 0
     chain.sleep(3600 * 24 * 7)
     chain.mine(1)
 
+    # claim profit
+    strategy.harvest({"from": gov})
+    chain.mine(1)
+
+    # 6 hours for pricepershare to go up
+    chain.sleep(3600 * 6)
+    chain.mine(1)
+
     vault.revokeStrategy(strategy, {"from": gov})
     strategy.startCooldown({"from": gov})
-    chain.sleep(3600*24*11)
+    chain.sleep(3600 * 24 * 11)
     chain.mine(1)
     strategy.harvest({"from": gov})
+    chain.mine(1)
     assert aave.balanceOf(vault) > deposit_amount
 
     pass
