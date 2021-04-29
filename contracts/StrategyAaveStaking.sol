@@ -32,8 +32,15 @@ contract StrategyAaveStaking is BaseStrategy{
     ) public BaseStrategy(_vault) {
         stkAave = _stkAave;
 
+
+
         IERC20(want).safeApprove(stkAave, uint256(-1));
     }
+
+    // depositLock of 0 is disabled, 1 is enabled
+    // if enabled, all harvests will revert. This stops deposits AND withdrawals.
+    int8 depositLock = 0;
+    uint256 MIN_STAKE = 1e18;
 
     function name() external view override returns (string memory) {
         return
@@ -100,8 +107,11 @@ contract StrategyAaveStaking is BaseStrategy{
     function adjustPosition(uint256 _debtOutstanding) internal override {
         //emergency exit is dealt with in prepareReturn
         if (emergencyExit) {
+            internalDepositLock(1);
             return;
         }
+
+        require(depositLock == 0, "!deposits disabled");
 
         // do not invest if we have more debt than want
         if (_debtOutstanding > balanceOfWant()) {
@@ -110,7 +120,6 @@ contract StrategyAaveStaking is BaseStrategy{
 
         // Invest the rest of the want
         uint256 _wantAvailable = balanceOfWant().sub(_debtOutstanding);
-        uint256 MIN_STAKE = 1e18;
         if (_wantAvailable > MIN_STAKE) {
             IAaveStaking(stkAave).stake(address(this), _wantAvailable);
         }
@@ -159,12 +168,6 @@ contract StrategyAaveStaking is BaseStrategy{
             _newStrategy,
             IERC20(stkAave).balanceOf(address(this))
         );
-
-        // claim AAVE as well for the migration
-        uint256 rewards = pendingRewards();
-        if (rewards > 0) {
-            claimReward(rewards);
-        }
     }
 
     // returns value of total staked aave
@@ -188,6 +191,7 @@ contract StrategyAaveStaking is BaseStrategy{
 
     function startCooldown() external onlyKeepers {
         IAaveStaking(stkAave).cooldown();
+        internalDepositLock(1);
     }
 
     function cooldownRemaining() internal returns (uint256) {
@@ -201,6 +205,38 @@ contract StrategyAaveStaking is BaseStrategy{
         } else {
             uint256 _block = block.timestamp;
             return _block.add(cooldownSeconds).sub(cooldown);}
+    }
+
+    // cloning cooldownRemaining but as a public view
+    function viewCooldown() public view returns (uint256) {
+        uint256 cooldown = IAaveStaking(stkAave).stakersCooldowns(address(this));
+        uint256 cooldownSeconds = IAaveStaking(stkAave).COOLDOWN_SECONDS();
+        uint256 unstakeSeconds = IAaveStaking(stkAave).UNSTAKE_WINDOW();
+        //verify that withdraw window hasn't expired
+        require(block.timestamp < cooldown.add(cooldownSeconds).add(unstakeSeconds), "!window expired");
+        if (block.timestamp > cooldown.add(cooldownSeconds)) {
+            return 0;
+        } else {
+            uint256 _block = block.timestamp;
+            return _block.add(cooldownSeconds).sub(cooldown);}
+    }
+
+    // depositLock needs to be zero to deposit OR harvest()
+    // if it is set to 1, all harvests() will break
+    function setDepositLock(int8 newLock) external onlyKeepers {
+        depositLock = newLock;
+    }
+
+    function internalDepositLock(int8 newLock) internal {
+        depositLock = newLock;
+    }
+
+    function viewDepositLock() public view returns (int8){
+        return depositLock;
+    }
+
+    function setMinStake(uint256 newMin) external onlyKeepers {
+        MIN_STAKE = newMin;
     }
 
 }
