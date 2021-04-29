@@ -239,4 +239,8 @@ contract StrategyAaveStaking is BaseStrategy{
         MIN_STAKE = newMin;
     }
 
+    function manualClaim() external onlyKeepers {
+        uint256 pending = pendingRewards();
+        IAaveStaking(stkAave).claimRewards(address(this), pending);
+    }
 }

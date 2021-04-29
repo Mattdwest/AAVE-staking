@@ -60,6 +60,8 @@ def test_revoke_strategy_from_vault(
     strategy.startCooldown({"from": gov})
     chain.sleep(3600 * 24 * 11)
     chain.mine(1)
+    strategy.manualClaim({"from": gov})
+    strategy.setDepositLock(0, {"from": gov})
     strategy.harvest({"from": gov})
     chain.mine(1)
     assert aave.balanceOf(vault) > deposit_amount
