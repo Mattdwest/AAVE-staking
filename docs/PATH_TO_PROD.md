@@ -74,16 +74,19 @@
     - the withdrawal lock needs to be respected.
     - the withdrawal lock is a hybrid model.
         - deposits during an unstaking timelock will increase timelock proportionately
-- **Scripts / steps needed:*
+- **Scripts / steps needed:**
     - startCooldown()
     - emergency shutdown
     - wait 10 days
-    - harvest
+    - setDepositLock(0) to enable harvest
+    - harvest()
 - **Is it safe to...**
     - call EmergencyShutdown
         - yes
     - remove from withdrawQueue
-        - yes
+        - yes.
     - call revoke and then harvest
-        - Will revert due to timelock. startCooldown() needed before harvesting.
+        - Will revert due to timelock. startCooldown() needed before harvesting. 10 days needed before harvest.
+        - startCooldown() trips the depositLock flag to 1, needs to be set to 0 again to enable harvesting.
         - In emergency, can still migrate to a new strategy. stkAave is not locked to addresses.
+        - For revoke, the best working method is to manualClaim(), setDepositLock(0), harvest().
