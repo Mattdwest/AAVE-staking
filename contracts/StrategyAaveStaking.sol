@@ -34,12 +34,12 @@ contract StrategyAaveStaking is BaseStrategy{
 
 
 
-        IERC20(want).safeApprove(stkAave, uint256(-1));
+        IERC20(want).safeApprove(stkAave, type(uint256).max);
     }
 
     // depositLock of 0 is disabled, 1 is enabled
     // if enabled, all harvests will revert. This stops deposits AND withdrawals.
-    int8 depositLock = 0;
+    int8 public depositLock = 0;
     uint256 MIN_STAKE = 1e18;
 
     function name() external view override returns (string memory) {
@@ -80,10 +80,10 @@ contract StrategyAaveStaking is BaseStrategy{
         uint256 balanceOfWantBefore = balanceOfWant();
         uint256 balanceOfWantAfter = balanceOfWantBefore;  //see below
 
-        uint256 rewards = pendingRewards();
+        uint256 _rewards = pendingRewards();
 
-        if (rewards > 0) {
-            claimReward(rewards);
+        if (_rewards > 0) {
+            claimReward(_rewards);
             // we only read balance again if rewards were claimed
            balanceOfWantAfter = balanceOfWant();
         }
@@ -111,7 +111,10 @@ contract StrategyAaveStaking is BaseStrategy{
             return;
         }
 
-        require(depositLock == 0, "!deposits disabled");
+        if (depositLock == 1) {
+            return;
+        }
+
 
         // do not invest if we have more debt than want
         if (_debtOutstanding > balanceOfWant()) {
@@ -189,7 +192,7 @@ contract StrategyAaveStaking is BaseStrategy{
         return IAaveStaking(stkAave).getTotalRewardsBalance(address(this));
     }
 
-    function startCooldown() external onlyKeepers {
+    function startCooldown() external onlyAuthorized {
         IAaveStaking(stkAave).cooldown();
         internalDepositLock(1);
     }
@@ -223,7 +226,7 @@ contract StrategyAaveStaking is BaseStrategy{
 
     // depositLock needs to be zero to deposit OR harvest()
     // if it is set to 1, all harvests() will break
-    function setDepositLock(int8 newLock) external onlyKeepers {
+    function setDepositLock(int8 newLock) external onlyAuthorized {
         depositLock = newLock;
     }
 
@@ -235,12 +238,16 @@ contract StrategyAaveStaking is BaseStrategy{
         return depositLock;
     }
 
-    function setMinStake(uint256 newMin) external onlyKeepers {
+    function setMinStake(uint256 newMin) external onlyAuthorized {
         MIN_STAKE = newMin;
     }
 
     function manualClaim() external onlyKeepers {
         uint256 pending = pendingRewards();
         IAaveStaking(stkAave).claimRewards(address(this), pending);
+    }
+
+    function setDelegate(address delegatee) external onlyAuthorized {
+        IAaveStaking(stkAave).delegate(delegatee);
     }
 }

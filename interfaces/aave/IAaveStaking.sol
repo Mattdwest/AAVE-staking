@@ -18,4 +18,6 @@ interface IAaveStaking {
     function stakersCooldowns(address) external view returns (uint256);
 
     function UNSTAKE_WINDOW() external view returns (uint256);
+
+    function delegate(address) external;
 }
