@@ -247,7 +247,7 @@ contract StrategyAaveStaking is BaseStrategy{
         IAaveStaking(stkAave).claimRewards(address(this), pending);
     }
 
-    function setDelegate(address delegatee) external onlyAuthorized {
+    function setDelegate(address delegatee) external onlyGovernance {
         IAaveStaking(stkAave).delegate(delegatee);
     }
 }
